@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "mcp-behavioral-prompts"
+version = "1.0.0"
+description = "A specialized MCP server providing behavioral prompts for AI assistant modification."
+authors = ["VerifyLoop"]
+readme = "README.md"
+packages = [{include = "mcp_prompts_server", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+mcp = {extras = ["cli"], version = "^1.2.0"}
+pydantic-settings = "^2.3.4"
+colorlog = "^6.8.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.2"
+pytest-asyncio = "^0.23.7"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
