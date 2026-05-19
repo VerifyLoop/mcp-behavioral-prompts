@@ -5,6 +5,9 @@ description = "A specialized MCP server providing behavioral prompts for AI assi
 authors = ["VerifyLoop"]
 readme = "README.md"
 packages = [{include = "mcp_prompts_server", from = "src"}]
+include = [
+    { path = "src/mcp_prompts_server/prompts/templates/*.md", format = ["sdist", "wheel"] },
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -15,6 +18,11 @@ colorlog = "^6.8.2"
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
 pytest-asyncio = "^0.23.7"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+asyncio_mode = "auto"
 
 [build-system]
 requires = ["poetry-core"]

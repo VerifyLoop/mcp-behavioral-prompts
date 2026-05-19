@@ -1,2 +1,1 @@
-# Auto-discovery of prompts modules
-from . import behavioral_prompts
+from . import registry  # noqa: F401  -- registers prompts on import
