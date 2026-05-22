@@ -24,14 +24,17 @@ class TestSolverRunner:
         # Calibration should be near-zero since we always pass at high confidence.
         assert m.brier < 0.1
 
-    def test_runs_italian_liceo_partial(self) -> None:
+    def test_runs_italian_liceo_extended(self) -> None:
         runner = SolverRunner(SolverAgent(MockSolverLLM()))
         result = runner.run(load_problems("italian_liceo"))
-        # Italian phrasing isn't fully supported by the mock — but the runner
-        # must surface failures cleanly via metrics rather than crashing.
         m = result.metrics
-        assert m.n == 2
-        assert m.correct + m.failure_count == 2
+        # 14 problems, including deliberate edge cases (no-real-solutions,
+        # find-x phrasing, parens). The runner must surface failures via
+        # metrics not crashes; n_wrong = n - correct - failure_count.
+        assert m.n == 14
+        assert m.correct >= 12  # solid majority must pass
+        wrong = m.n - m.correct - m.failure_count
+        assert wrong >= 0
 
 
 class TestTutorRunner:

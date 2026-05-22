@@ -1,3 +1,4 @@
+from .logging_config import get_logger, setup_logging
 from .schemas import (
     BBox,
     SolvedProblem,
@@ -24,5 +25,7 @@ __all__ = [
     "VerificationRecord",
     "VisionElement",
     "VisionResult",
+    "get_logger",
     "get_settings",
+    "setup_logging",
 ]

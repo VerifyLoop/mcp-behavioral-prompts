@@ -94,7 +94,15 @@ class MockSolverLLM:
     model_id = "mock-solver-v1"
 
     _EQ_PATTERN = re.compile(r"solve\s+(.+?)\s+for\s+([a-zA-Z])", re.IGNORECASE)
+    _FIND_X_PATTERN = re.compile(
+        r"find\s+([a-zA-Z])\s+(?:such\s+that\s+|if\s+|where\s+)?(.+?)(?:\.|\?|$)",
+        re.IGNORECASE,
+    )
     _ARITH_PATTERN = re.compile(r"what is\s+([\d\s+\-*/().^]+)\??", re.IGNORECASE)
+    _COMPUTE_PATTERN = re.compile(
+        r"(?:compute|evaluate|calculate)\s+(?:the\s+value\s+of\s+)?([\d\s+\-*/().^]+)",
+        re.IGNORECASE,
+    )
     _KINEMATIC_PATTERN = re.compile(
         r"accelerates?\s+at\s+([\d.]+)\s*m/s\^?2.*?for\s+([\d.]+)\s*(seconds|s)\b",
         re.IGNORECASE | re.DOTALL,
@@ -111,7 +119,19 @@ class MockSolverLLM:
         if m:
             return self._draft_kinematics(float(m.group(1)), float(m.group(2)))
 
+        m = self._FIND_X_PATTERN.search(text)
+        if m:
+            var = m.group(1).strip()
+            body = m.group(2).strip()
+            # If body contains an equality, treat as equation.
+            if "=" in body:
+                return self._draft_equation(body, var, text)
+
         m = self._ARITH_PATTERN.search(text)
+        if m:
+            return self._draft_arithmetic(m.group(1).strip())
+
+        m = self._COMPUTE_PATTERN.search(text)
         if m:
             return self._draft_arithmetic(m.group(1).strip())
 

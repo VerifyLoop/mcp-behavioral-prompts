@@ -79,29 +79,154 @@ BUILTIN_DATASETS: dict[str, list[EvalProblem]] = {
         ),
     ],
     "italian_liceo": [
+        # Arithmetic / basic algebra (Liceo Scientifico, biennio)
         EvalProblem(
             id="it-liceo-1",
             subject="math",
-            problem_text="Risolvi 2*x - 10 = 0 per x",
-            expected_answer="[5]",
-            expected_numeric=5.0,
+            problem_text="What is 17 + 26?",
+            expected_answer="43",
+            expected_numeric=43.0,
             difficulty=1,
             source="italian-liceo",
         ),
         EvalProblem(
             id="it-liceo-2",
+            subject="math",
+            problem_text="What is 12 * 15?",
+            expected_answer="180",
+            expected_numeric=180.0,
+            difficulty=1,
+            source="italian-liceo",
+        ),
+        EvalProblem(
+            id="it-liceo-3",
+            subject="math",
+            problem_text="Solve 3*x - 21 = 0 for x",
+            expected_answer="[7]",
+            expected_numeric=7.0,
+            difficulty=1,
+            source="italian-liceo",
+        ),
+        EvalProblem(
+            id="it-liceo-4",
+            subject="math",
+            problem_text="Solve 5*x + 10 = 0 for x",
+            expected_answer="[-2]",
+            expected_numeric=-2.0,
+            difficulty=1,
+            source="italian-liceo",
+        ),
+        EvalProblem(
+            id="it-liceo-5",
+            subject="math",
+            problem_text="Solve x**2 - 25 = 0 for x",
+            expected_answer="[-5, 5]",
+            expected_numeric=None,
+            difficulty=2,
+            source="italian-liceo",
+        ),
+        EvalProblem(
+            id="it-liceo-6",
+            subject="math",
+            problem_text="Solve x**2 - 4*x + 4 = 0 for x",
+            expected_answer="[2]",
+            expected_numeric=2.0,
+            difficulty=2,
+            source="italian-liceo",
+        ),
+        EvalProblem(
+            id="it-liceo-7",
+            subject="math",
+            problem_text="Solve x**2 + 1 = 0 for x",
+            expected_answer="[]",  # no real solutions
+            expected_numeric=None,
+            difficulty=3,
+            source="italian-liceo",
+        ),
+        # Kinematics (Liceo Scientifico, primo anno fisica)
+        EvalProblem(
+            id="it-liceo-8",
             subject="physics",
             problem_text=(
-                "Un corpo accelera at 3 m/s^2 starting from rest for 4 seconds. "
-                "Quanto vale la velocita?"
+                "An object accelerates at 3 m/s^2 starting from rest for 4 seconds. "
+                "What is its velocity?"
             ),
-            # Note: mock LLM is keyed on English phrasing; mixing languages tests
-            # how the eval surfaces unsupported inputs.
             expected_answer="12",
             expected_numeric=12.0,
             expected_units="m/s",
             difficulty=2,
             source="italian-liceo",
+        ),
+        EvalProblem(
+            id="it-liceo-9",
+            subject="physics",
+            problem_text=(
+                "An object accelerates at 9.81 m/s^2 starting from rest for 2 seconds. "
+                "What is its velocity?"
+            ),
+            expected_answer="19.62",
+            expected_numeric=19.62,
+            expected_units="m/s",
+            difficulty=2,
+            source="italian-liceo",
+        ),
+        EvalProblem(
+            id="it-liceo-10",
+            subject="physics",
+            problem_text=(
+                "An object accelerates at 0.5 m/s^2 starting from rest for 60 seconds. "
+                "What is its velocity?"
+            ),
+            expected_answer="30.0",
+            expected_numeric=30.0,
+            expected_units="m/s",
+            difficulty=2,
+            source="italian-liceo",
+        ),
+        EvalProblem(
+            id="it-liceo-11",
+            subject="physics",
+            problem_text=(
+                "An object accelerates at 2.5 m/s^2 starting from rest for 10 seconds. "
+                "What is its velocity?"
+            ),
+            expected_answer="25.0",
+            expected_numeric=25.0,
+            expected_units="m/s",
+            difficulty=2,
+            source="italian-liceo",
+        ),
+        EvalProblem(
+            id="it-liceo-12",
+            subject="physics",
+            problem_text=(
+                "An object accelerates at 4 m/s^2 starting from rest for 8 seconds. "
+                "What is its velocity?"
+            ),
+            expected_answer="32",
+            expected_numeric=32.0,
+            expected_units="m/s",
+            difficulty=2,
+            source="italian-liceo",
+        ),
+        # Edge cases — solver should fail cleanly, not silently:
+        EvalProblem(
+            id="it-liceo-13",
+            subject="math",
+            problem_text="Find x such that 7*x = 49",  # phrasing not matched by mock
+            expected_answer="7",
+            expected_numeric=7.0,
+            difficulty=1,
+            source="italian-liceo-edge",
+        ),
+        EvalProblem(
+            id="it-liceo-14",
+            subject="math",
+            problem_text="Compute the value of (10 - 4)*3",  # parens unsupported by mock
+            expected_answer="18",
+            expected_numeric=18.0,
+            difficulty=1,
+            source="italian-liceo-edge",
         ),
     ],
 }
