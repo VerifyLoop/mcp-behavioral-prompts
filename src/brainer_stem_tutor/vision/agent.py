@@ -79,11 +79,42 @@ class VisionAgent:
             logger.debug("vision cache hit %s/%s", h[:8], granularity)
             return cached
         raw = self._llm.extract(image_bytes, granularity=granularity)
-        raw = dict(raw)
-        raw.setdefault("image_hash", h)
+        raw = self._normalise_gemini_payload(dict(raw), h)
         result = VisionResult.model_validate(raw)
         self._cache.put(h, result, granularity)
         return result
+
+    # ---- Gemini compatibility ---------------------------------------------
+
+    @staticmethod
+    def _normalise_gemini_payload(raw: dict, image_hash_value: str) -> dict:
+        """Convert Gemini-native `box_2d` + `page_meta` shapes to our schema.
+
+        Accepts BOTH shapes so a real Gemini call and an in-process mock can
+        share the same VisionAgent without each having to know what the
+        other emits:
+
+        - Gemini-native: elements carry `box_2d=[y_min, x_min, y_max, x_max]`
+          in 0-1000 integers, and the wrapper has `page_meta.width/height`.
+        - Internal: elements carry `bbox={x,y,w,h}` in 0-1 floats and the
+          wrapper has top-level `page_width/page_height`.
+        """
+        from ..shared.schemas import BBox
+
+        raw.setdefault("image_hash", image_hash_value)
+
+        if "page_meta" in raw and isinstance(raw["page_meta"], dict):
+            meta = raw.pop("page_meta")
+            raw.setdefault("page_width", int(meta.get("width", raw.get("page_width", 1))))
+            raw.setdefault("page_height", int(meta.get("height", raw.get("page_height", 1))))
+            if "rotation" in meta and "rotation" not in raw:
+                raw["rotation"] = int(meta["rotation"])
+
+        elements = raw.get("elements", [])
+        for el in elements:
+            if "box_2d" in el and "bbox" not in el:
+                el["bbox"] = BBox.from_gemini_box_2d(el.pop("box_2d")).model_dump()
+        return raw
 
     @staticmethod
     def build_step_to_bbox_mapping(

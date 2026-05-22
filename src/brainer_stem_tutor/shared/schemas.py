@@ -95,7 +95,13 @@ class SolvedProblem(BaseModel):
 
 
 class BBox(BaseModel):
-    """Normalised bounding box, coordinates in [0, 1]."""
+    """Normalised bounding box, coordinates in [0, 1].
+
+    This is our INTERNAL representation. Gemini emits boxes as
+    `box_2d = [y_min, x_min, y_max, x_max]` in integer 0-1000 coordinates;
+    use `BBox.from_gemini_box_2d(...)` to convert. Round-trip helpers exist
+    on the model so downstream code can keep using {x, y, w, h} ergonomics.
+    """
 
     x: float = Field(ge=0.0, le=1.0)
     y: float = Field(ge=0.0, le=1.0)
@@ -107,6 +113,44 @@ class BBox(BaseModel):
         if self.x + self.w > 1.0 + 1e-6 or self.y + self.h > 1.0 + 1e-6:
             raise ValueError("Bounding box extends outside the unit square.")
         return self
+
+    # ---- Gemini box_2d interop ------------------------------------------
+
+    @classmethod
+    def from_gemini_box_2d(cls, box_2d: list[int]) -> "BBox":
+        """Convert Gemini's `[y_min, x_min, y_max, x_max]` (0-1000 ints) to BBox.
+
+        Source: Gemini API image understanding docs, 2024-2026 — coordinates
+        are normalised integers with origin top-left.
+        """
+        if len(box_2d) != 4:
+            raise ValueError(f"box_2d must have 4 ints, got {len(box_2d)}")
+        y_min, x_min, y_max, x_max = box_2d
+        if y_max <= y_min or x_max <= x_min:
+            raise ValueError(f"box_2d has non-positive extent: {box_2d}")
+        return cls(
+            x=x_min / 1000.0,
+            y=y_min / 1000.0,
+            w=(x_max - x_min) / 1000.0,
+            h=(y_max - y_min) / 1000.0,
+        )
+
+    def to_gemini_box_2d(self) -> list[int]:
+        """Inverse of from_gemini_box_2d. Rounds half-away-from-zero."""
+        x_min = round(self.x * 1000)
+        y_min = round(self.y * 1000)
+        x_max = round((self.x + self.w) * 1000)
+        y_max = round((self.y + self.h) * 1000)
+        return [y_min, x_min, y_max, x_max]
+
+    def to_pixels(self, width: int, height: int) -> tuple[int, int, int, int]:
+        """Map to absolute pixels (x_min, y_min, x_max, y_max)."""
+        return (
+            int(round(self.x * width)),
+            int(round(self.y * height)),
+            int(round((self.x + self.w) * width)),
+            int(round((self.y + self.h) * height)),
+        )
 
 
 ElementRole = Literal["formula", "symbol", "label", "diagram", "note"]
