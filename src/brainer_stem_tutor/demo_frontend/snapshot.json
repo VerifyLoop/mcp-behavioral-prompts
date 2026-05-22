@@ -1,0 +1,206 @@
+{
+  "problem": "An object accelerates at 2 m/s^2 starting from rest for 5 seconds. What is its velocity?",
+  "solved": {
+    "problem_text": "An object accelerates at 2 m/s^2 starting from rest for 5 seconds. What is its velocity?",
+    "subject": "physics",
+    "steps": [
+      {
+        "n": 1,
+        "kind": "setup",
+        "latex": "a=2.0, t=5.0",
+        "justification": "given"
+      },
+      {
+        "n": 2,
+        "kind": "concept",
+        "latex": "v = a \\cdot t",
+        "justification": "constant acceleration from rest"
+      },
+      {
+        "n": 3,
+        "kind": "computation",
+        "latex": "v = 2.0 \\cdot 5.0 = 10.0",
+        "justification": "multiply"
+      },
+      {
+        "n": 4,
+        "kind": "answer",
+        "latex": "10.0 m/s",
+        "justification": "final"
+      }
+    ],
+    "final_answer": "10.0",
+    "final_answer_numeric": 10.0,
+    "units": "m/s",
+    "confidence": 0.99,
+    "verifications": [
+      {
+        "tool": "unit_checker",
+        "input": "m/s^2 * s -> m/s",
+        "output": "true",
+        "passed": true,
+        "notes": "ratio magnitude=1.0"
+      },
+      {
+        "tool": "sympy_cas",
+        "input": "2.0 * 5.0",
+        "output": "10.0",
+        "passed": true,
+        "notes": "numeric recompute"
+      }
+    ],
+    "model_used": "mock-solver-v1"
+  },
+  "vision": {
+    "last_result": {
+      "image_hash": "7faacb8035cd9625d25f08a185edca66ccf03b65c7e833932c2cb67e52db88dc",
+      "elements": [
+        {
+          "id": "bbox_0",
+          "bbox": {
+            "x": 0.1,
+            "y": 0.15,
+            "w": 0.45,
+            "h": 0.07
+          },
+          "text": "Given: a = 2 m/s^2, t = 5 s",
+          "latex": "a = 2 \\, \\mathrm{m/s^2}, \\; t = 5 \\, \\mathrm{s}",
+          "role": "note",
+          "parent_id": null,
+          "confidence": 0.92
+        },
+        {
+          "id": "bbox_1",
+          "bbox": {
+            "x": 0.1,
+            "y": 0.3,
+            "w": 0.3,
+            "h": 0.07
+          },
+          "text": "v = a t",
+          "latex": "v = a \\cdot t",
+          "role": "formula",
+          "parent_id": null,
+          "confidence": 0.95
+        },
+        {
+          "id": "bbox_2",
+          "bbox": {
+            "x": 0.1,
+            "y": 0.5,
+            "w": 0.5,
+            "h": 0.08
+          },
+          "text": "v = ?",
+          "latex": "v = ?",
+          "role": "formula",
+          "parent_id": null,
+          "confidence": 0.88
+        }
+      ],
+      "page_width": 1080,
+      "page_height": 1440,
+      "rotation": 0
+    },
+    "step_to_bboxes": {
+      "2": [
+        "bbox_1"
+      ],
+      "1": [
+        "bbox_0"
+      ],
+      "3": [
+        "bbox_1",
+        "bbox_2"
+      ]
+    }
+  },
+  "transcript": [
+    {
+      "student": "I have a = 2 and t = 5. What now?",
+      "tutor": {
+        "student_facing_message": "Good \u2014 your reasoning up to step 1 holds. For the next step, think about what each symbol stands for. What relationship does that suggest?",
+        "actions": [
+          {
+            "kind": "highlight_bboxes",
+            "text": null,
+            "bbox_ids": [
+              "bbox_0"
+            ],
+            "color": "#fde047",
+            "choices": [],
+            "correct_idx": null,
+            "diagram_url": null,
+            "step_n": null
+          }
+        ],
+        "internal_notes": "strategy=confirm_and_advance target_step=1"
+      }
+    },
+    {
+      "student": "I think I should use v = a t.",
+      "tutor": {
+        "student_facing_message": "Good \u2014 your reasoning up to step 1 holds. For the next step, think about the underlying definition or law. What relationship does that suggest?",
+        "actions": [
+          {
+            "kind": "highlight_bboxes",
+            "text": null,
+            "bbox_ids": [
+              "bbox_1"
+            ],
+            "color": "#fde047",
+            "choices": [],
+            "correct_idx": null,
+            "diagram_url": null,
+            "step_n": null
+          }
+        ],
+        "internal_notes": "strategy=confirm_and_advance target_step=2"
+      }
+    },
+    {
+      "student": "OK so v should be... wait, what's the answer?",
+      "tutor": {
+        "student_facing_message": "Good \u2014 your reasoning up to step 2 holds. For the next step, think about the numerical evaluation. What relationship does that suggest?",
+        "actions": [
+          {
+            "kind": "highlight_bboxes",
+            "text": null,
+            "bbox_ids": [
+              "bbox_1",
+              "bbox_2"
+            ],
+            "color": "#fde047",
+            "choices": [],
+            "correct_idx": null,
+            "diagram_url": null,
+            "step_n": null
+          }
+        ],
+        "internal_notes": "strategy=confirm_and_advance target_step=3"
+      }
+    },
+    {
+      "student": "just tell me the number",
+      "tutor": {
+        "student_facing_message": "Good \u2014 your reasoning up to step 2 holds. For the next step, think about the numerical evaluation. What relationship does that suggest?",
+        "actions": [
+          {
+            "kind": "highlight_bboxes",
+            "text": null,
+            "bbox_ids": [
+              "bbox_1",
+              "bbox_2"
+            ],
+            "color": "#fde047",
+            "choices": [],
+            "correct_idx": null,
+            "diagram_url": null,
+            "step_n": null
+          }
+        ],
+        "internal_notes": "strategy=confirm_and_advance target_step=3"
+      }
+    }
+  ]
+}

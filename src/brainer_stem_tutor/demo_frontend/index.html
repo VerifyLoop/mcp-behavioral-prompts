@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Brainer STEM Tutor — Static Demo</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --panel: #131a33;
+    --ink: #e6e9f5;
+    --muted: #8d95b8;
+    --accent: #fde047;
+    --tutor: #2563eb;
+    --student: #16a34a;
+    --leak: #ef4444;
+  }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    display: flex;
+    min-height: 100vh;
+  }
+  .pane {
+    flex: 1;
+    padding: 1.25rem;
+    overflow-y: auto;
+  }
+  h1 { font-size: 1.1rem; margin: 0 0 1rem; color: var(--muted); letter-spacing: .02em; }
+  .panel { background: var(--panel); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+  .turn { padding: .5rem .75rem; border-radius: 6px; margin: .5rem 0; }
+  .turn.student { background: rgba(22,163,74,.12); border-left: 3px solid var(--student); }
+  .turn.tutor { background: rgba(37,99,235,.12); border-left: 3px solid var(--tutor); }
+  .turn .who { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .actions { font-size: .8rem; color: var(--muted); margin-top: .25rem; }
+  .canvas-host {
+    position: relative;
+    background: white;
+    color: #111;
+    border-radius: 8px;
+    aspect-ratio: 1080 / 1440;
+    width: 100%;
+    max-width: 480px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+  .page-bg {
+    position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(transparent, transparent 39px, #e5e7eb 40px);
+  }
+  .bbox {
+    position: absolute;
+    border: 2px solid #cbd5e1;
+    border-radius: 4px;
+    background: rgba(255,255,255,.6);
+    color: #111;
+    padding: 2px 4px;
+    font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.1;
+    box-sizing: border-box;
+    transition: box-shadow .2s, border-color .2s, background .2s;
+  }
+  .bbox.hl {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(253,224,71,.45), 0 0 16px rgba(253,224,71,.6);
+    background: rgba(253,224,71,.18);
+    z-index: 2;
+  }
+  .timeline {
+    display: flex; gap: .25rem; flex-wrap: wrap;
+  }
+  .timeline button {
+    background: var(--panel); color: var(--ink);
+    border: 1px solid #2a335c; border-radius: 4px;
+    padding: .25rem .5rem; font-size: .75rem;
+    cursor: pointer;
+  }
+  .timeline button.active { background: var(--tutor); border-color: var(--tutor); }
+  code.kv { color: var(--accent); }
+  .leak-banner { background: var(--leak); padding: .5rem; border-radius: 4px; margin-bottom: 1rem; }
+  pre.solved { font-size: .75rem; color: var(--muted); white-space: pre-wrap; }
+</style>
+</head>
+<body>
+  <div class="pane">
+    <h1>Student notes — overlay</h1>
+    <div class="canvas-host" id="canvas"></div>
+    <div class="timeline" id="timeline"></div>
+  </div>
+  <div class="pane">
+    <h1>Tutor conversation</h1>
+    <div id="leak"></div>
+    <div id="chat"></div>
+    <div class="panel">
+      <h1>Verified solution (internal — never shown to student)</h1>
+      <pre class="solved" id="solved"></pre>
+    </div>
+  </div>
+
+  <script>
+  async function load() {
+    let snap;
+    try {
+      const res = await fetch("snapshot.json");
+      if (!res.ok) throw new Error("snapshot missing");
+      snap = await res.json();
+    } catch (e) {
+      document.getElementById("chat").innerHTML =
+        "<div class='turn tutor'>Run <code>brainer-tutor-demo --snapshot src/brainer_stem_tutor/demo_frontend/snapshot.json</code> first.</div>";
+      return;
+    }
+
+    const canvas = document.getElementById("canvas");
+    const bg = document.createElement("div"); bg.className = "page-bg"; canvas.appendChild(bg);
+
+    const els = (snap.vision && snap.vision.last_result && snap.vision.last_result.elements) || [];
+    for (const el of els) {
+      const div = document.createElement("div");
+      div.className = "bbox";
+      div.dataset.id = el.id;
+      const b = el.bbox;
+      div.style.left = (b.x * 100) + "%";
+      div.style.top = (b.y * 100) + "%";
+      div.style.width = (b.w * 100) + "%";
+      div.style.height = (b.h * 100) + "%";
+      div.textContent = el.text;
+      canvas.appendChild(div);
+    }
+
+    const chat = document.getElementById("chat");
+    const timeline = document.getElementById("timeline");
+    const buttons = [];
+    snap.transcript.forEach((turn, idx) => {
+      const s = document.createElement("div"); s.className = "turn student";
+      s.innerHTML = `<div class="who">student</div>${turn.student}`;
+      chat.appendChild(s);
+      const t = document.createElement("div"); t.className = "turn tutor";
+      const actions = (turn.tutor.actions || []).map(a =>
+        `<span>· ${a.kind}${a.bbox_ids && a.bbox_ids.length ? ' [' + a.bbox_ids.join(',') + ']' : ''}</span>`
+      ).join(" ");
+      t.innerHTML = `<div class="who">tutor</div>${turn.tutor.student_facing_message}<div class="actions">${actions}</div>`;
+      chat.appendChild(t);
+
+      const btn = document.createElement("button"); btn.textContent = "turn " + (idx + 1);
+      btn.onclick = () => setActiveTurn(idx);
+      timeline.appendChild(btn);
+      buttons.push(btn);
+    });
+
+    function setActiveTurn(idx) {
+      buttons.forEach((b, i) => b.classList.toggle("active", i === idx));
+      document.querySelectorAll(".bbox").forEach(b => b.classList.remove("hl"));
+      const turn = snap.transcript[idx];
+      for (const a of turn.tutor.actions || []) {
+        if (a.kind === "highlight_bboxes") {
+          for (const bid of a.bbox_ids || []) {
+            const node = document.querySelector(`.bbox[data-id="${bid}"]`);
+            if (node) node.classList.add("hl");
+          }
+        }
+      }
+    }
+    if (snap.transcript.length) setActiveTurn(0);
+
+    document.getElementById("solved").textContent = JSON.stringify({
+      final_answer: snap.solved && snap.solved.final_answer,
+      final_numeric: snap.solved && snap.solved.final_answer_numeric,
+      units: snap.solved && snap.solved.units,
+      confidence: snap.solved && snap.solved.confidence,
+      verifications: snap.solved && snap.solved.verifications.length
+    }, null, 2);
+
+    // Leak check on the rendered turns.
+    const finalAns = snap.solved && snap.solved.final_answer_numeric;
+    const leaks = snap.transcript.filter(t => finalAns !== null && t.tutor.student_facing_message.match(new RegExp("\\\\b" + finalAns + "\\\\b")));
+    if (leaks.length) {
+      document.getElementById("leak").innerHTML =
+        `<div class='leak-banner'>${leaks.length} leak(s) detected in transcript!</div>`;
+    }
+  }
+  load();
+  </script>
+</body>
+</html>
