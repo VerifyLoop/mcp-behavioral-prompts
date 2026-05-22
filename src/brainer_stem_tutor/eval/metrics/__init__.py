@@ -5,6 +5,14 @@ from .accuracy import (
     compute_tutor_metrics,
     brier_score,
 )
+from .calibration import (
+    CalibrationReport,
+    QuantileBin,
+    bootstrap_brier_ci,
+    brier,
+    compute_calibration,
+    quantile_bins,
+)
 
 __all__ = [
     "SolverMetrics",
@@ -12,4 +20,10 @@ __all__ = [
     "compute_solver_metrics",
     "compute_tutor_metrics",
     "brier_score",
+    "CalibrationReport",
+    "QuantileBin",
+    "bootstrap_brier_ci",
+    "brier",
+    "compute_calibration",
+    "quantile_bins",
 ]
