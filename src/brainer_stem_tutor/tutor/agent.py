@@ -184,7 +184,9 @@ class MockTutorLLM:
 class TutorAgent:
     """The orchestrator-facing tutor.
 
-    Wraps a TutorLLMProtocol with policy + moderator.
+    Wraps a TutorLLMProtocol with policy + moderator. Holds a per-instance
+    fingerprint cache so the moderator doesn't recompute step fingerprints on
+    every conversational turn for the same problem.
     """
 
     def __init__(
@@ -197,6 +199,15 @@ class TutorAgent:
         self._llm = llm
         self._policy = policy or FollowPolicy(settings)
         self._moderator = moderator or LeakModerator(settings)
+        self._fp_cache: dict[int, list[tuple[int, str]]] = {}
+
+    def _fingerprints(self, solved: SolvedProblem) -> list[tuple[int, str]]:
+        key = id(solved)
+        fps = self._fp_cache.get(key)
+        if fps is None:
+            fps = LeakModerator.precompute_fingerprints(solved)
+            self._fp_cache[key] = fps
+        return fps
 
     def respond(
         self,
@@ -207,7 +218,7 @@ class TutorAgent:
     ) -> TutorTurn:
         decision = self._policy.decide(signals, total_steps=len(solved.steps))
         turn = self._llm.draft_turn(solved, student_message, decision, vision=vision)
-        report = self._moderator.review(turn, solved)
+        report = self._moderator.review(turn, solved, fingerprints=self._fingerprints(solved))
         if report.leaked:
             assert report.redacted_message is not None
             return TutorTurn(
