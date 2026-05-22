@@ -1,7 +1,8 @@
 from .schemas_ext import VisionContext
-from .agent import VisionAgent, VisionLLMProtocol, MockVisionLLM
-from .live_detector import LiveDetector
+from .agent import VisionAgent, VisionLLMProtocol, MockVisionLLM, image_hash
+from .live_detector import LiveDetector, LiveEvent
 from .cache import VisionCache
+from .prompts import VISION_SYSTEM_PROMPT
 
 __all__ = [
     "VisionContext",
@@ -9,5 +10,8 @@ __all__ = [
     "VisionLLMProtocol",
     "MockVisionLLM",
     "LiveDetector",
+    "LiveEvent",
     "VisionCache",
+    "VISION_SYSTEM_PROMPT",
+    "image_hash",
 ]
