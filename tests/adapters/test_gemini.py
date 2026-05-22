@@ -7,7 +7,6 @@ parsing layer without the real SDK.
 """
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
 
 from brainer_stem_tutor.adapters.gemini import (

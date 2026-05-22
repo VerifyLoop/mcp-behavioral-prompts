@@ -12,7 +12,7 @@ adapter wraps the user turn the same way before sending it.
 from __future__ import annotations
 
 import re
-from typing import Iterable
+from collections.abc import Iterable
 
 # A printable ASCII sentinel chosen to be rare in normal student text.
 # U+2058 FOUR DOT PUNCTUATION is even rarer but ASCII keeps copy-paste sane.

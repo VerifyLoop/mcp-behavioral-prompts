@@ -8,7 +8,7 @@ behaviour auditable and resistant to "please give me the answer" attacks.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal
 
 from ..shared.schemas import StudentSignals
 from ..shared.settings import TutorSettings, get_settings
@@ -33,7 +33,7 @@ class PolicyDecision:
 class FollowPolicy:
     """Pure-Python decision table from signals to strategy."""
 
-    def __init__(self, settings: Optional[TutorSettings] = None) -> None:
+    def __init__(self, settings: TutorSettings | None = None) -> None:
         self._settings = settings or get_settings()
 
     def decide(

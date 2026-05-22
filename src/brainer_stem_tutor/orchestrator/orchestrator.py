@@ -9,7 +9,6 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass
-from typing import Optional
 
 from ..shared.schemas import (
     SolvedProblem,
@@ -32,9 +31,9 @@ logger = logging.getLogger(__name__)
 class OrchestratorResponse:
     """What the orchestrator hands back to the transport layer."""
 
-    tutor_turn: Optional[TutorTurn] = None
-    vision_result: Optional[VisionResult] = None
-    solved: Optional[SolvedProblem] = None
+    tutor_turn: TutorTurn | None = None
+    vision_result: VisionResult | None = None
+    solved: SolvedProblem | None = None
     notes: str = ""
 
 
@@ -44,9 +43,9 @@ class Orchestrator:
         solver: SolverAgent,
         tutor: TutorAgent,
         vision: VisionAgent,
-        store: Optional[SessionStore] = None,
-        signal_computer: Optional[SignalComputer] = None,
-        settings: Optional[TutorSettings] = None,
+        store: SessionStore | None = None,
+        signal_computer: SignalComputer | None = None,
+        settings: TutorSettings | None = None,
     ) -> None:
         self._solver = solver
         self._tutor = tutor
@@ -72,11 +71,11 @@ class Orchestrator:
         self,
         session_id: str,
         problem_text: str,
-        image_bytes: Optional[bytes] = None,
+        image_bytes: bytes | None = None,
     ) -> OrchestratorResponse:
         """Student declared the problem they want help with."""
         state = self._state(session_id)
-        vision_result: Optional[VisionResult] = None
+        vision_result: VisionResult | None = None
         if image_bytes is not None:
             vision_result = self._vision.extract(image_bytes)
             state.vision = VisionContext(last_result=vision_result)
@@ -96,7 +95,7 @@ class Orchestrator:
         self,
         session_id: str,
         text: str,
-        ts: Optional[float] = None,
+        ts: float | None = None,
     ) -> OrchestratorResponse:
         state = self._state(session_id)
         if state.solved is None:
@@ -119,7 +118,7 @@ class Orchestrator:
         self,
         session_id: str,
         image_bytes: bytes,
-        step_keywords: Optional[dict[int, list[str]]] = None,
+        step_keywords: dict[int, list[str]] | None = None,
     ) -> OrchestratorResponse:
         """A new snapshot of the student's notes arrived."""
         state = self._state(session_id)

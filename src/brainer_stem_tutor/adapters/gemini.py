@@ -27,17 +27,16 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass
-from typing import Any, Optional, Protocol
+from typing import Protocol
 
 from ..shared.schemas import (
     SolvedProblem,
     Step,
-    StudentSignals,
     TutorAction,
     TutorTurn,
     VerificationRecord,
 )
-from ..solver.agent import DraftSolution, SolverProtocol
+from ..solver.agent import DraftSolution
 from ..solver.prompts import SOLVER_SYSTEM_PROMPT
 from ..tutor.policy import PolicyDecision
 from ..tutor.prompts import TUTOR_SYSTEM_PROMPT
@@ -56,7 +55,7 @@ class GenerativeClient(Protocol):
         model: str,
         system: str,
         user: str | bytes,
-        response_schema: Optional[dict] = None,
+        response_schema: dict | None = None,
     ) -> dict:  # pragma: no cover - protocol
         ...
 

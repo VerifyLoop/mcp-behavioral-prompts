@@ -5,8 +5,6 @@ genuine math/physics invariant, not a mock.
 """
 from __future__ import annotations
 
-import pytest
-
 from brainer_stem_tutor.solver.mcp_tools.plot_renderer import render_plot_svg
 from brainer_stem_tutor.solver.mcp_tools.sympy_cas import (
     sympy_simplify,

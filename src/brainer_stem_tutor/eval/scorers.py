@@ -11,12 +11,10 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Optional
 
 import sympy as sp
 
 from ..solver.mcp_tools._timeout import run_with_timeout
-
 
 # ---------------------------------------------------------------------------
 # Extractors
@@ -26,7 +24,7 @@ from ..solver.mcp_tools._timeout import run_with_timeout
 _GSM8K_TAIL_RE = re.compile(r"####\s*(-?[\d,]+(?:\.\d+)?)")
 
 
-def extract_gsm8k_answer(text: str) -> Optional[str]:
+def extract_gsm8k_answer(text: str) -> str | None:
     """Pull the canonical GSM8K answer from a solution string.
 
     Returns the cleaned numeric string (no commas, leading + stripped) or
@@ -38,7 +36,7 @@ def extract_gsm8k_answer(text: str) -> Optional[str]:
     return m.group(1).replace(",", "")
 
 
-def extract_boxed_answer(text: str) -> Optional[str]:
+def extract_boxed_answer(text: str) -> str | None:
     r"""Pull the LAST \\boxed{...} from a MATH-style solution.
 
     Handles nested braces so \\boxed{\\frac{1}{2}} returns "\\frac{1}{2}".
@@ -75,7 +73,7 @@ class ScoreResult:
     notes: str = ""
 
 
-def _to_float(s: str) -> Optional[float]:
+def _to_float(s: str) -> float | None:
     try:
         return float(s.replace(",", ""))
     except (ValueError, TypeError):
@@ -90,10 +88,7 @@ def score_gsm8k(predicted: str, gold: str, tol: float = 1e-3) -> ScoreResult:
         return ScoreResult(
             correct=False, method="skipped", notes="non-numeric extraction"
         )
-    if g == 0:
-        ok = abs(p) <= tol
-    else:
-        ok = abs(p - g) <= tol * max(1.0, abs(g))
+    ok = abs(p) <= tol if g == 0 else abs(p - g) <= tol * max(1.0, abs(g))
     return ScoreResult(correct=ok, method="numeric")
 
 

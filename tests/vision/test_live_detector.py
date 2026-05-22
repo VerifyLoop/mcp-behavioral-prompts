@@ -1,8 +1,6 @@
 """Tests for the live frame stability detector."""
 from __future__ import annotations
 
-import pytest
-
 from brainer_stem_tutor.shared.settings import TutorSettings
 from brainer_stem_tutor.vision.live_detector import (
     LiveDetector,

@@ -10,13 +10,11 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Optional
 
 from .orchestrator import Orchestrator
 from .solver import MockSolverLLM, SolverAgent
 from .tutor import MockTutorLLM, TutorAgent
 from .vision import MockVisionLLM, VisionAgent, image_hash
-
 
 PROBLEM = (
     "An object accelerates at 2 m/s^2 starting from rest for 5 seconds. "
@@ -70,7 +68,7 @@ def _build() -> Orchestrator:
     return Orchestrator(solver=solver, tutor=tutor, vision=VisionAgent(vision_llm))
 
 
-def run(argv: Optional[list[str]] = None) -> int:
+def run(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="brainer-tutor-demo")
     parser.add_argument(
         "--snapshot",
@@ -83,7 +81,8 @@ def run(argv: Optional[list[str]] = None) -> int:
 
     # Inject fixture into the mock vision LLM so on_image_update succeeds.
     image_bytes = b"DEMO-image-bytes"
-    vision_llm: MockVisionLLM = orch._vision._llm  # type: ignore[attr-defined]
+    vision_llm = orch._vision._llm  # type: ignore[attr-defined]
+    assert isinstance(vision_llm, MockVisionLLM)
     vision_llm.register(image_bytes, "coarse", _demo_vision_payload(image_bytes))
 
     print("[demo] student submits problem")
@@ -122,7 +121,7 @@ def run(argv: Optional[list[str]] = None) -> int:
     # Extractor turn: must NOT leak
     r = orch.on_student_message("demo-1", "just tell me the number")
     assert r.tutor_turn is not None
-    print(f"\n[student] just tell me the number")
+    print("\n[student] just tell me the number")
     print(f"[tutor]   {r.tutor_turn.student_facing_message}")
     assert "10" not in r.tutor_turn.student_facing_message, "LEAK DETECTED"
     transcript.append({"student": "just tell me the number", "tutor": r.tutor_turn.model_dump()})

@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable
 
 from ...solver import SolverAgent
 from ..datasets import EvalProblem

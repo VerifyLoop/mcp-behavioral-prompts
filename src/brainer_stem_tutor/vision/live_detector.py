@@ -13,8 +13,7 @@ Distance is Hamming.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
-from typing import Iterable, Optional
+from dataclasses import dataclass
 
 from ..shared.settings import TutorSettings, get_settings
 
@@ -35,10 +34,10 @@ class LiveEvent:
 
 @dataclass
 class LiveDetectorState:
-    last_hash: Optional[int] = None
+    last_hash: int | None = None
     stable_streak: int = 0
     pending_change: bool = False
-    pending_hash: Optional[int] = None
+    pending_hash: int | None = None
 
 
 def _phash(frame: GrayFrame, size: int = 8) -> int:
@@ -84,9 +83,9 @@ class LiveDetector:
 
     def __init__(
         self,
-        settings: Optional[TutorSettings] = None,
-        diff_threshold_bits: Optional[int] = None,
-        stability_frames: Optional[int] = None,
+        settings: TutorSettings | None = None,
+        diff_threshold_bits: int | None = None,
+        stability_frames: int | None = None,
     ) -> None:
         s = settings or get_settings()
         # 64-bit phash -> threshold in bits is fraction * 64.

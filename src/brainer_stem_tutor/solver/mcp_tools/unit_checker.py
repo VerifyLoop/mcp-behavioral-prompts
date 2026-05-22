@@ -7,7 +7,6 @@ match the question.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 import pint
 
@@ -18,7 +17,7 @@ _UREG = pint.UnitRegistry()
 class UnitCheckResult:
     ok: bool
     output: str
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 def normalise_unit(unit: str) -> UnitCheckResult:

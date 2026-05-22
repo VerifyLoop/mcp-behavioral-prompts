@@ -4,19 +4,17 @@ from __future__ import annotations
 import pytest
 
 from brainer_stem_tutor.shared.schemas import (
+    ActionKind,
     BBox,
     SolvedProblem,
     Step,
     StudentSignals,
-    TutorAction,
     TutorTurn,
     VerificationRecord,
     VisionElement,
     VisionResult,
 )
-from brainer_stem_tutor.shared.schemas import ActionKind
 from brainer_stem_tutor.tutor import MockTutorLLM, TutorAgent
-from brainer_stem_tutor.tutor.policy import PolicyDecision
 from brainer_stem_tutor.vision.schemas_ext import VisionContext
 
 

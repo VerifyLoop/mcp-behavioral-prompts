@@ -8,7 +8,6 @@ the agent.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 import sympy as sp
 
@@ -23,7 +22,7 @@ class CASResult:
 
     ok: bool
     output: str
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 def _safe_parse(expr: str) -> sp.Expr:

@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Iterable
 
 from ..scorers import extract_boxed_answer, extract_gsm8k_answer
 from .loaders import EvalProblem

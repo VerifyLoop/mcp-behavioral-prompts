@@ -22,15 +22,15 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Optional, Protocol
+from typing import Protocol
 
 import sympy as sp
 
 from ..shared.schemas import SolvedProblem, Step, VerificationRecord
 from ..shared.settings import TutorSettings, get_settings
 from .cache import SolvedCache
-from .mcp_tools.sympy_cas import sympy_solve_equation, sympy_verify  # noqa: F401
-from .mcp_tools.unit_checker import check_dimensions  # noqa: F401
+from .mcp_tools.sympy_cas import sympy_solve_equation, sympy_verify
+from .mcp_tools.unit_checker import check_dimensions
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ class SolverProtocol(Protocol):
     Mock impl: MockSolverLLM (deterministic, sympy-backed).
     """
 
-    def draft(self, problem_text: str) -> "DraftSolution":  # pragma: no cover - protocol
+    def draft(self, problem_text: str) -> DraftSolution:  # pragma: no cover - protocol
         ...
 
     @property
@@ -67,8 +67,8 @@ class DraftSolution:
     subject: str
     steps: list[Step]
     final_answer: str
-    final_answer_numeric: Optional[float]
-    units: Optional[str]
+    final_answer_numeric: float | None
+    units: str | None
     verifications: list[VerificationRecord] = field(default_factory=list)
 
 
@@ -185,7 +185,7 @@ class MockSolverLLM:
                 pass
             real_numeric_roots.append(r)
 
-        num: Optional[float] = None
+        num: float | None = None
         if len(real_numeric_roots) == 1 and not (complex_roots or under_specified_roots):
             try:
                 num = float(real_numeric_roots[0])
@@ -318,8 +318,8 @@ class SolverAgent:
     def __init__(
         self,
         llm: SolverProtocol,
-        cache: Optional[SolvedCache] = None,
-        settings: Optional[TutorSettings] = None,
+        cache: SolvedCache | None = None,
+        settings: TutorSettings | None = None,
     ) -> None:
         self._llm = llm
         # Note: `cache or SolvedCache()` would discard an empty user cache
@@ -327,7 +327,7 @@ class SolverAgent:
         self._cache = cache if cache is not None else SolvedCache()
         self._settings = settings or get_settings()
 
-    def solve(self, problem_text: str, image_hash: Optional[str] = None) -> SolvedProblem:
+    def solve(self, problem_text: str, image_hash: str | None = None) -> SolvedProblem:
         cached = self._cache.get(problem_text, image_hash)
         if cached is not None:
             logger.debug("solver cache hit")

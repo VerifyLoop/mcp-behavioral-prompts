@@ -9,7 +9,7 @@ import pytest
 fastapi = pytest.importorskip("fastapi")
 TestClient = pytest.importorskip("fastapi.testclient").TestClient
 
-from brainer_stem_tutor.orchestrator.fastapi_app import create_app
+from brainer_stem_tutor.orchestrator.fastapi_app import create_app  # noqa: E402
 
 
 @pytest.fixture

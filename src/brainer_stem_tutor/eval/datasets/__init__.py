@@ -1,3 +1,3 @@
-from .loaders import EvalProblem, load_problems, BUILTIN_DATASETS
+from .loaders import BUILTIN_DATASETS, EvalProblem, load_problems
 
-__all__ = ["EvalProblem", "load_problems", "BUILTIN_DATASETS"]
+__all__ = ["BUILTIN_DATASETS", "EvalProblem", "load_problems"]

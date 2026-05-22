@@ -6,8 +6,8 @@ whether any tutor turn would have leaked the verified answer to the student.
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable
 
 from ...orchestrator import Orchestrator
 from ...tutor.moderator import LeakModerator

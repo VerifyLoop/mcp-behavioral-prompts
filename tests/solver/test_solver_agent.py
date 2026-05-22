@@ -4,7 +4,7 @@ from __future__ import annotations
 import pytest
 
 from brainer_stem_tutor.shared.schemas import SolvedProblem
-from brainer_stem_tutor.solver import MockSolverLLM, SolverAgent, SolvedCache
+from brainer_stem_tutor.solver import MockSolverLLM, SolvedCache, SolverAgent
 
 
 class TestMockSolverLLMDirect:
@@ -78,8 +78,8 @@ class TestSolverAgent:
             model_id = "stub"
 
             def draft(self, problem_text: str):
-                from brainer_stem_tutor.solver.agent import DraftSolution
                 from brainer_stem_tutor.shared.schemas import Step
+                from brainer_stem_tutor.solver.agent import DraftSolution
 
                 return DraftSolution(
                     subject="math",

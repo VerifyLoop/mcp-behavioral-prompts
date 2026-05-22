@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pytest
-from pydantic import ValidationError
 
 from brainer_stem_tutor.shared.schemas import BBox, VisionResult
 from brainer_stem_tutor.vision import MockVisionLLM, VisionAgent, image_hash

@@ -10,8 +10,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Optional
-
+from typing import Literal
 
 Subject = Literal["math", "physics", "chemistry", "other"]
 
@@ -22,8 +21,8 @@ class EvalProblem:
     subject: Subject
     problem_text: str
     expected_answer: str
-    expected_numeric: Optional[float] = None
-    expected_units: Optional[str] = None
+    expected_numeric: float | None = None
+    expected_units: str | None = None
     difficulty: int = 1   # 1-5, MATH-style levels
     source: str = "builtin"
 

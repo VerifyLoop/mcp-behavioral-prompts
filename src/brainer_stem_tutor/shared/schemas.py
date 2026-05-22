@@ -7,10 +7,9 @@ can be reused both at runtime and in the eval harness.
 from __future__ import annotations
 
 from enum import Enum
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
-
 
 # ---------------------------------------------------------------------------
 # Solver layer
@@ -43,7 +42,7 @@ class VerificationRecord(BaseModel):
     input: str
     output: str
     passed: bool
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class SolvedProblem(BaseModel):
@@ -58,17 +57,17 @@ class SolvedProblem(BaseModel):
     subject: Literal["math", "physics", "chemistry", "other"]
     steps: list[Step]
     final_answer: str = Field(description="Canonical final answer (string)")
-    final_answer_numeric: Optional[float] = Field(
+    final_answer_numeric: float | None = Field(
         default=None,
         description="Numeric value when the answer reduces to a single number; used by leak detection.",
     )
-    units: Optional[str] = Field(default=None, description="Units, e.g. 'm/s^2'")
+    units: str | None = Field(default=None, description="Units, e.g. 'm/s^2'")
     confidence: float = Field(ge=0.0, le=1.0)
     verifications: list[VerificationRecord] = Field(default_factory=list)
     model_used: str = Field(default="unknown", description="LLM identifier used to solve")
 
     @model_validator(mode="after")
-    def _at_least_one_verification(self) -> "SolvedProblem":
+    def _at_least_one_verification(self) -> SolvedProblem:
         if not self.verifications:
             raise ValueError(
                 "A SolvedProblem must include at least one VerificationRecord. "
@@ -77,7 +76,7 @@ class SolvedProblem(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def _steps_are_sequential(self) -> "SolvedProblem":
+    def _steps_are_sequential(self) -> SolvedProblem:
         for i, s in enumerate(self.steps, start=1):
             if s.n != i:
                 raise ValueError(
@@ -109,7 +108,7 @@ class BBox(BaseModel):
     h: float = Field(gt=0.0, le=1.0)
 
     @model_validator(mode="after")
-    def _inside_unit_square(self) -> "BBox":
+    def _inside_unit_square(self) -> BBox:
         if self.x + self.w > 1.0 + 1e-6 or self.y + self.h > 1.0 + 1e-6:
             raise ValueError("Bounding box extends outside the unit square.")
         return self
@@ -117,7 +116,7 @@ class BBox(BaseModel):
     # ---- Gemini box_2d interop ------------------------------------------
 
     @classmethod
-    def from_gemini_box_2d(cls, box_2d: list[int]) -> "BBox":
+    def from_gemini_box_2d(cls, box_2d: list[int]) -> BBox:
         """Convert Gemini's `[y_min, x_min, y_max, x_max]` (0-1000 ints) to BBox.
 
         Source: Gemini API image understanding docs, 2024-2026 — coordinates
@@ -146,10 +145,10 @@ class BBox(BaseModel):
     def to_pixels(self, width: int, height: int) -> tuple[int, int, int, int]:
         """Map to absolute pixels (x_min, y_min, x_max, y_max)."""
         return (
-            int(round(self.x * width)),
-            int(round(self.y * height)),
-            int(round((self.x + self.w) * width)),
-            int(round((self.y + self.h) * height)),
+            round(self.x * width),
+            round(self.y * height),
+            round((self.x + self.w) * width),
+            round((self.y + self.h) * height),
         )
 
 
@@ -162,9 +161,9 @@ class VisionElement(BaseModel):
     id: str
     bbox: BBox
     text: str
-    latex: Optional[str] = None
+    latex: str | None = None
     role: ElementRole
-    parent_id: Optional[str] = None
+    parent_id: str | None = None
     confidence: float = Field(ge=0.0, le=1.0)
 
 
@@ -177,11 +176,11 @@ class VisionResult(BaseModel):
     page_height: int = Field(gt=0)
     rotation: int = 0
 
-    def by_id(self, element_id: str) -> Optional[VisionElement]:
+    def by_id(self, element_id: str) -> VisionElement | None:
         return next((e for e in self.elements if e.id == element_id), None)
 
     @model_validator(mode="after")
-    def _unique_ids(self) -> "VisionResult":
+    def _unique_ids(self) -> VisionResult:
         ids = [e.id for e in self.elements]
         if len(ids) != len(set(ids)):
             raise ValueError("Element ids must be unique within a VisionResult.")
@@ -215,19 +214,18 @@ class TutorAction(BaseModel):
     """
 
     kind: ActionKind
-    text: Optional[str] = None
+    text: str | None = None
     bbox_ids: list[str] = Field(default_factory=list)
-    color: Optional[str] = None
+    color: str | None = None
     choices: list[str] = Field(default_factory=list)
-    correct_idx: Optional[int] = None
-    diagram_url: Optional[str] = None
-    step_n: Optional[int] = None
+    correct_idx: int | None = None
+    diagram_url: str | None = None
+    step_n: int | None = None
 
     @model_validator(mode="after")
-    def _payload_matches_kind(self) -> "TutorAction":
-        if self.kind in (ActionKind.ASK_QUESTION, ActionKind.REQUEST_DRAWING):
-            if not self.text:
-                raise ValueError(f"{self.kind} requires `text`.")
+    def _payload_matches_kind(self) -> TutorAction:
+        if self.kind in (ActionKind.ASK_QUESTION, ActionKind.REQUEST_DRAWING) and not self.text:
+            raise ValueError(f"{self.kind} requires `text`.")
         if self.kind == ActionKind.HIGHLIGHT_BBOXES and not self.bbox_ids:
             raise ValueError("highlight_bboxes requires at least one bbox id.")
         if self.kind == ActionKind.SHOW_QUIZ:
@@ -283,7 +281,7 @@ class StudentSignals(BaseModel):
         default=0.0,
         description="0 = calm, 1 = very frustrated. Heuristic, not LLM.",
     )
-    last_error_kind: Optional[Literal["sign", "unit", "concept", "arithmetic"]] = None
+    last_error_kind: Literal["sign", "unit", "concept", "arithmetic"] | None = None
     image_progress_delta: float = Field(
         ge=0.0,
         le=1.0,

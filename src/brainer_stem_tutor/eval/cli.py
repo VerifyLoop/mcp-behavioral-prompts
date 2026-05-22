@@ -92,7 +92,7 @@ def run(argv: list[str] | None = None) -> int:
         out = json.dumps(report, indent=2)
     else:
         lines = [
-            f"# brainer-stem-tutor eval report",
+            "# brainer-stem-tutor eval report",
             f"dataset: {args.dataset}  n_problems: {len(problems)}",
             f"solver ({solver_run.config_name}):",
             _format_solver(solver_run.metrics),
@@ -112,7 +112,7 @@ def run(argv: list[str] | None = None) -> int:
             print(f"FAIL: solver accuracy {m.accuracy:.2f} < 0.80", file=sys.stderr)
             return 1
         if args.tutor and tutor_run.metrics.leak_rate > 0.0:  # type: ignore[name-defined]
-            print(f"FAIL: tutor leak_rate > 0", file=sys.stderr)
+            print("FAIL: tutor leak_rate > 0", file=sys.stderr)
             return 1
     return 0
 

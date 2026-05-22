@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Optional, Protocol
+from typing import Protocol
 
 from ..shared.schemas import (
     SolvedProblem,
@@ -18,14 +18,14 @@ class SessionState:
     """Everything the orchestrator remembers about one student session."""
 
     session_id: str
-    solved: Optional[SolvedProblem] = None
+    solved: SolvedProblem | None = None
     vision: VisionContext = field(default_factory=VisionContext)
     student_turns: list[StudentTurn] = field(default_factory=list)
     tutor_turns: list[TutorTurn] = field(default_factory=list)
 
     # Progress tracking (consumed by SignalComputer)
     last_correct_step: int = 0
-    last_error_kind: Optional[str] = None
+    last_error_kind: str | None = None
     attempts_count: int = 0
     last_step_change_ts: float = field(default_factory=time.time)
     last_image_progress_delta: float = 0.0
@@ -37,7 +37,7 @@ class SessionState:
     def append_tutor(self, turn: TutorTurn) -> None:
         self.tutor_turns.append(turn)
 
-    def mark_step_completed(self, n: int, ts: Optional[float] = None) -> None:
+    def mark_step_completed(self, n: int, ts: float | None = None) -> None:
         if n > self.last_correct_step:
             self.last_correct_step = n
             self.last_step_change_ts = ts if ts is not None else time.time()
@@ -48,7 +48,7 @@ class SessionState:
 
 
 class SessionStore(Protocol):
-    def get(self, session_id: str) -> Optional[SessionState]: ...  # pragma: no cover
+    def get(self, session_id: str) -> SessionState | None: ...  # pragma: no cover
     def put(self, state: SessionState) -> None: ...  # pragma: no cover
 
 
@@ -58,7 +58,7 @@ class InMemorySessionStore:
     def __init__(self) -> None:
         self._sessions: dict[str, SessionState] = {}
 
-    def get(self, session_id: str) -> Optional[SessionState]:
+    def get(self, session_id: str) -> SessionState | None:
         return self._sessions.get(session_id)
 
     def put(self, state: SessionState) -> None:

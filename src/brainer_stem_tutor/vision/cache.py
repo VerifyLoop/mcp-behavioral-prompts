@@ -1,8 +1,6 @@
 """Cache of vision extractions keyed by image hash."""
 from __future__ import annotations
 
-from typing import Optional
-
 from ..shared.schemas import VisionResult
 
 
@@ -22,7 +20,7 @@ class VisionCache:
     def _key(image_hash: str, granularity: str) -> tuple[str, str]:
         return (image_hash, granularity)
 
-    def get(self, image_hash: str, granularity: str = "coarse") -> Optional[VisionResult]:
+    def get(self, image_hash: str, granularity: str = "coarse") -> VisionResult | None:
         return self._store.get(self._key(image_hash, granularity))
 
     def put(

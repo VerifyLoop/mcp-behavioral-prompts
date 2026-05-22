@@ -8,8 +8,8 @@ time so the rest of the package stays lightweight; the import is deferred
 inside the constructor and the test suite skips them when the SDK is absent.
 """
 
-from .gemini import GeminiSolverLLM, GeminiTutorLLM, GeminiVisionLLM
 from .adk import build_adk_solver_agent_stub
+from .gemini import GeminiSolverLLM, GeminiTutorLLM, GeminiVisionLLM
 
 __all__ = [
     "GeminiSolverLLM",

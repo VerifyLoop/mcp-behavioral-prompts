@@ -15,8 +15,6 @@ References:
 """
 from __future__ import annotations
 
-from typing import Any
-
 
 def build_adk_solver_agent_stub(
     *,

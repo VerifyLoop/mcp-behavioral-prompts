@@ -15,19 +15,18 @@ Tutor:
 """
 from __future__ import annotations
 
-import math
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable, Optional
 
-from ..datasets import EvalProblem
 from ...shared.schemas import SolvedProblem, TutorTurn
+from ..datasets import EvalProblem
 
 
 @dataclass
 class SolverEntry:
     problem: EvalProblem
-    solved: Optional[SolvedProblem]
-    error: Optional[str] = None
+    solved: SolvedProblem | None
+    error: str | None = None
 
 
 @dataclass
@@ -62,7 +61,7 @@ class TutorMetrics:
         return self.leak_count / self.n if self.n else 0.0
 
 
-def _numeric_match(expected: Optional[float], actual: Optional[float], tol: float) -> bool:
+def _numeric_match(expected: float | None, actual: float | None, tol: float) -> bool:
     if expected is None or actual is None:
         return False
     if expected == 0:

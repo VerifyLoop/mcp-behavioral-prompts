@@ -28,7 +28,6 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Optional
 
 from ..shared.schemas import SolvedProblem, TutorTurn
 from ..shared.settings import TutorSettings, get_settings
@@ -42,8 +41,8 @@ class LeakReport:
 
     leaked: bool
     reasons: list[str]
-    redacted_message: Optional[str] = None
-    matched_steps: Optional[list[int]] = field(default_factory=list)
+    redacted_message: str | None = None
+    matched_steps: list[int] | None = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -119,13 +118,13 @@ def _extract_numbers(msg: str) -> list[float]:
     nums: list[float] = []
     consumed: list[tuple[int, int]] = []
 
+    import contextlib
+
     for m in _SPACED_DIGIT_RE.finditer(msg):
         joined = m.group(0).replace(" ", "")
-        try:
+        with contextlib.suppress(ValueError):
             nums.append(float(joined))
             consumed.append((m.start(), m.end()))
-        except ValueError:  # pragma: no cover - regex shouldn't allow it
-            pass
 
     def overlaps(a_start: int, a_end: int) -> bool:
         return any(not (a_end <= cs or ce <= a_start) for cs, ce in consumed)
@@ -134,10 +133,8 @@ def _extract_numbers(msg: str) -> list[float]:
         if overlaps(m.start(), m.end()):
             continue
         token = m.group(0).replace(",", "").replace(" ", "")
-        try:
+        with contextlib.suppress(ValueError):
             nums.append(float(token))
-        except ValueError:  # pragma: no cover
-            pass
     return nums
 
 
@@ -171,7 +168,7 @@ def _word_numbers(msg: str) -> list[int]:
 class LeakModerator:
     """Inspect a TutorTurn and decide whether it leaks the solution."""
 
-    def __init__(self, settings: Optional[TutorSettings] = None) -> None:
+    def __init__(self, settings: TutorSettings | None = None) -> None:
         self._settings = settings or get_settings()
 
     # ---- precomputation hook ------------------------------------------------
@@ -196,7 +193,7 @@ class LeakModerator:
         self,
         turn: TutorTurn,
         solved: SolvedProblem,
-        fingerprints: Optional[list[tuple[int, str]]] = None,
+        fingerprints: list[tuple[int, str]] | None = None,
     ) -> LeakReport:
         reasons: list[str] = []
         matched: list[int] = []
@@ -238,19 +235,14 @@ class LeakModerator:
             return False
         target = solved.final_answer_numeric
         tol = self._settings.MODERATOR_NUMERIC_TOLERANCE
-        for val in _extract_numbers(msg_norm):
-            if self._matches(val, target, tol):
-                return True
-        return False
+        return any(self._matches(val, target, tol) for val in _extract_numbers(msg_norm))
 
     def _word_number_leak(self, msg_norm: str, solved: SolvedProblem) -> bool:
         if solved.final_answer_numeric is None:
             return False
         target = solved.final_answer_numeric
-        for val in _word_numbers(msg_norm):
-            if self._matches(float(val), target, self._settings.MODERATOR_NUMERIC_TOLERANCE):
-                return True
-        return False
+        tol = self._settings.MODERATOR_NUMERIC_TOLERANCE
+        return any(self._matches(float(v), target, tol) for v in _word_numbers(msg_norm))
 
     @staticmethod
     def _matches(val: float, target: float, tol: float) -> bool:

@@ -14,16 +14,16 @@ from __future__ import annotations
 
 import logging
 import random
-from typing import Optional, Protocol
+from typing import Protocol
 
 from ..shared.schemas import (
+    ActionKind,
     SolvedProblem,
     StudentSignals,
     TutorAction,
     TutorTurn,
 )
-from ..shared.schemas import ActionKind
-from ..shared.settings import TutorSettings, get_settings
+from ..shared.settings import TutorSettings
 from ..vision.schemas_ext import VisionContext
 from .moderator import LeakModerator
 from .policy import FollowPolicy, PolicyDecision, Strategy
@@ -43,7 +43,7 @@ class TutorLLMProtocol(Protocol):
         solved: SolvedProblem,
         student_message: str,
         decision: PolicyDecision,
-        vision: Optional[VisionContext] = None,
+        vision: VisionContext | None = None,
     ) -> TutorTurn:  # pragma: no cover - protocol
         ...
 
@@ -59,7 +59,7 @@ class MockTutorLLM:
 
     model_id = "mock-tutor-v1"
 
-    def __init__(self, rng: Optional[random.Random] = None) -> None:
+    def __init__(self, rng: random.Random | None = None) -> None:
         self._rng = rng or random.Random(0)
 
     def draft_turn(
@@ -67,7 +67,7 @@ class MockTutorLLM:
         solved: SolvedProblem,
         student_message: str,
         decision: PolicyDecision,
-        vision: Optional[VisionContext] = None,
+        vision: VisionContext | None = None,
     ) -> TutorTurn:
         actions: list[TutorAction] = []
         message = self._message_for(decision.strategy, solved, decision.target_step)
@@ -192,9 +192,9 @@ class TutorAgent:
     def __init__(
         self,
         llm: TutorLLMProtocol,
-        policy: Optional[FollowPolicy] = None,
-        moderator: Optional[LeakModerator] = None,
-        settings: Optional[TutorSettings] = None,
+        policy: FollowPolicy | None = None,
+        moderator: LeakModerator | None = None,
+        settings: TutorSettings | None = None,
     ) -> None:
         self._llm = llm
         self._policy = policy or FollowPolicy(settings)
@@ -214,7 +214,7 @@ class TutorAgent:
         solved: SolvedProblem,
         student_message: str,
         signals: StudentSignals,
-        vision: Optional[VisionContext] = None,
+        vision: VisionContext | None = None,
     ) -> TutorTurn:
         decision = self._policy.decide(signals, total_steps=len(solved.steps))
         turn = self._llm.draft_turn(solved, student_message, decision, vision=vision)

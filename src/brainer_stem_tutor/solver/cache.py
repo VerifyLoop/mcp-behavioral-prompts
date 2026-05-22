@@ -6,12 +6,11 @@ about the same exercise twice in a session.
 from __future__ import annotations
 
 import hashlib
-from typing import Optional
 
 from ..shared.schemas import SolvedProblem
 
 
-def _key(problem_text: str, image_hash: Optional[str]) -> str:
+def _key(problem_text: str, image_hash: str | None) -> str:
     h = hashlib.sha256()
     h.update(problem_text.strip().encode("utf-8"))
     h.update(b"|")
@@ -27,14 +26,14 @@ class SolvedCache:
         self._store: dict[str, SolvedProblem] = {}
         self._order: list[str] = []
 
-    def get(self, problem_text: str, image_hash: Optional[str] = None) -> Optional[SolvedProblem]:
+    def get(self, problem_text: str, image_hash: str | None = None) -> SolvedProblem | None:
         return self._store.get(_key(problem_text, image_hash))
 
     def put(
         self,
         problem_text: str,
         solved: SolvedProblem,
-        image_hash: Optional[str] = None,
+        image_hash: str | None = None,
     ) -> None:
         k = _key(problem_text, image_hash)
         if k in self._store:

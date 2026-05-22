@@ -5,7 +5,7 @@ import json
 
 import pytest
 
-from brainer_stem_tutor.eval.datasets import BUILTIN_DATASETS, EvalProblem, load_problems
+from brainer_stem_tutor.eval.datasets import EvalProblem, load_problems
 
 
 class TestBuiltinDatasets:

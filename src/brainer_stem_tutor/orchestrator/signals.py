@@ -8,12 +8,10 @@ from __future__ import annotations
 
 import re
 import time
-from typing import Optional
 
 from ..shared.schemas import StudentSignals
 from ..shared.settings import TutorSettings, get_settings
 from .session import SessionState
-
 
 _FRUSTRATION_LEXICON = {
     "high": ("hate", "stupid", "give up", "impossible", "frustrated", "wtf", "boh"),
@@ -22,10 +20,10 @@ _FRUSTRATION_LEXICON = {
 
 
 class SignalComputer:
-    def __init__(self, settings: Optional[TutorSettings] = None) -> None:
+    def __init__(self, settings: TutorSettings | None = None) -> None:
         self._settings = settings or get_settings()
 
-    def compute(self, state: SessionState, now: Optional[float] = None) -> StudentSignals:
+    def compute(self, state: SessionState, now: float | None = None) -> StudentSignals:
         now = now if now is not None else time.time()
         time_on_step = max(0.0, now - state.last_step_change_ts)
         frustration = self._frustration_score(state)

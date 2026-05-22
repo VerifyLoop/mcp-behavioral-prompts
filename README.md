@@ -26,29 +26,86 @@ The stack is structured so that the **safety** (anti-leak), the **control**
 (follow policy), and the **intelligence** (LLM) are independent layers that
 can be swapped without rewriting each other.
 
+## Architecture
+
+```mermaid
+flowchart TD
+  subgraph Frontend
+    UI["Next.js / static HTML overlay"]
+  end
+  subgraph Orchestrator["Orchestrator (FastAPI + WS)"]
+    SESS["SessionState<br/>(per student)"]
+    SIG["SignalComputer<br/>(heuristic)"]
+    POL["FollowPolicy<br/>(decision table)"]
+  end
+  subgraph Vision["Vision agent"]
+    VLLM["Gemini 3 Flash<br/>or MockVisionLLM"]
+    VCACHE["VisionCache<br/>(coarse / fine)"]
+    LIVE["LiveDetector<br/>pHash + stability"]
+  end
+  subgraph Solver["Solver agent"]
+    SLLM["Gemini 2.5 / GPT-5 / DeepSeek<br/>or MockSolverLLM"]
+    SCACHE["SolvedCache"]
+    MCP1["sympy CAS (timeout)"]
+    MCP2["pint unit checker"]
+    MCP3["plot renderer (SVG)"]
+  end
+  subgraph Tutor["Tutor agent"]
+    TLLM["Gemini 2.5<br/>or MockTutorLLM"]
+    SPOT["Spotlighting<br/>(datamarker)"]
+    MOD["LeakModerator<br/>(numeric + words + step copy)"]
+  end
+  subgraph Eval["Eval harness"]
+    DS["MATH / GSM8K /<br/>italian_liceo / smoke"]
+    METRICS["accuracy + Brier Skill +<br/>quantile bins + bootstrap CI"]
+    SIMS["SimulatedStudent<br/>5 personas inc. extractor"]
+  end
+  UI -- "REST + WS" --> Orchestrator
+  Orchestrator --> Vision
+  Orchestrator --> Solver
+  Orchestrator --> Tutor
+  Vision --> VLLM
+  Vision --> VCACHE
+  Vision --> LIVE
+  Solver --> SLLM
+  Solver --> SCACHE
+  Solver --> MCP1
+  Solver --> MCP2
+  Solver --> MCP3
+  Tutor --> SPOT
+  Tutor --> TLLM
+  Tutor --> MOD
+  Eval -.-> Solver
+  Eval -.-> Tutor
+  SESS --> SIG --> POL --> Tutor
+```
+
 ## Quickstart
 
 ```bash
+# poetry-managed install
 poetry install
-# or, for fast iteration without poetry:
-pip install pydantic 'pydantic-settings>=2.3' sympy pint pytest 'pytest-asyncio>=0.23' mcp[cli] colorlog
 
-# run the original MCP server
+# or fast iteration without poetry:
+pip install pydantic 'pydantic-settings>=2.3' sympy pint pytest \
+  'pytest-asyncio>=0.23' pytest-cov mcp[cli] colorlog fastapi httpx ruff mypy
+
+# original MCP server
 poetry run python -m mcp_prompts_server.server
 
-# run all tests (122 of them)
-pytest -q
+# all tests (232) with coverage gate
+make test
 
-# run the eval harness
-PYTHONPATH=src python -m brainer_stem_tutor.eval.cli --dataset smoke --tutor
+# eval harness on the built-in smoke dataset
+make eval
 
-# run the end-to-end demo (writes a snapshot the static frontend can render)
-PYTHONPATH=src python -m brainer_stem_tutor.demo \
-  --snapshot src/brainer_stem_tutor/demo_frontend/snapshot.json
+# end-to-end demo writes a snapshot the static frontend renders
+make demo
+make serve-frontend   # opens http://localhost:8000
 
-# then serve the static frontend
-cd src/brainer_stem_tutor/demo_frontend && python -m http.server 8000
-# open http://localhost:8000
+# lint + types
+ruff check src/brainer_stem_tutor
+mypy src/brainer_stem_tutor
 ```
 
 ## Package layout
@@ -56,49 +113,64 @@ cd src/brainer_stem_tutor/demo_frontend && python -m http.server 8000
 ```
 src/brainer_stem_tutor/
 ├── shared/         # pydantic schemas + settings (the cross-layer contract)
-├── solver/         # SolverAgent + sympy/pint MCP tools + cache + prompt
-├── tutor/          # TutorAgent + LeakModerator + FollowPolicy + prompt
-├── vision/         # VisionAgent + LiveDetector + VisionCache + prompt
-├── orchestrator/   # SessionStore + SignalComputer + Orchestrator
-├── eval/           # datasets + metrics + runners + simulated student + CLI
+├── solver/         # SolverAgent + sympy/pint MCP tools + cache + timeout
+│   └── mcp_tools/  # sympy_cas, unit_checker, plot_renderer, _timeout
+├── tutor/          # TutorAgent + LeakModerator + FollowPolicy + spotlight
+├── vision/         # VisionAgent + LiveDetector + VisionCache (Gemini box_2d)
+├── orchestrator/   # SessionStore + SignalComputer + Orchestrator + FastAPI
+├── adapters/       # GeminiSolverLLM / TutorLLM / VisionLLM + ADK stub
+├── eval/           # datasets + GSM8K/MATH scorers + calibration + runners
 ├── demo_frontend/  # static HTML overlay that renders snapshot.json
 └── demo.py         # end-to-end CLI demo
 ```
 
 ## Key invariants
 
-- **A SolvedProblem must include at least one VerificationRecord.** The
-  solver refuses to close otherwise.
-- **The LeakModerator inspects every tutor turn** and rewrites it when it
-  spots the verified `final_answer` (numeric within tolerance, or string
-  substring), or when more than 2 consecutive solution steps are quoted.
-  Tested against three adversarial tutor LLMs (leaky-compliant,
-  jailbreak-susceptible, step-copier) — all are caught.
-- **FollowPolicy is pure-Python.** No LLM decides its own intervention
-  style; signals → strategy is a deterministic table.
+- **SolvedProblem requires at least one VerificationRecord.** The solver
+  refuses to close without it. Verifications include numeric or sympy
+  back-substitution checks, dimensional analysis with pint, and an
+  optional second verifier (Wolfram, gated by confidence).
+- **Every sympy call has a wall-clock timeout** (SIGALRM on POSIX main
+  thread, threaded fallback otherwise). A hung pathological problem
+  surfaces as `ok=False` rather than blocking the agent.
+- **The LeakModerator** runs on every tutor turn and rejects messages
+  containing the verified `final_answer` as plain digits, scientific
+  notation, thousands-grouped, single-digit-spaced, LaTeX-wrapped, or
+  spelled out as English / Italian number words. It also bounds quoted
+  consecutive solution steps to `MODERATOR_MAX_CONSECUTIVE_STEPS`.
+- **Spotlighting (Hines et al. 2024)** wraps every student turn in a
+  sentinel character so the LLM treats user input strictly as data.
+- **FollowPolicy is deterministic.** Signals → strategy is a table the
+  LLM cannot override.
 
 ## Evaluation baseline (mock stack)
 
 ```
 solver (C0_mock): n=5  acc=1.00  acc_verified=1.00  brier=0.006  conf=0.94
-tutor  (C0_mock): n=75 leak_rate=0.000  (across 5 personas inc. extractor + shortcut)
+tutor  (C0_mock): n=75 leak_rate=0.000  (5 personas, inc. extractor + shortcut)
+coverage:                90%  (gate: 85%)
 ```
 
 Replace `MockSolverLLM` / `MockTutorLLM` / `MockVisionLLM` with the real
-Gemini / GPT / DeepSeek implementations and the same harness measures the
-delta.
+Gemini / GPT / DeepSeek implementations (see `adapters/gemini.py`) and the
+same harness measures the delta. ADK 2026 wiring lives in
+`adapters/adk.py` and uses the canonical `McpToolset(connection_params=
+StdioConnectionParams(...))` pattern.
 
 ## Roadmap
 
-See `/.claude/plans/allora-devi-fare-un-dynamic-reddy.md` (project spec).
-The Python backend, MCP tools, evaluation harness and static demo frontend
-are complete. The Next.js full frontend (App Router + WebSocket streaming)
-and the real Gemini-backed LLM adapters are the next phases.
+The Python backend, MCP tools, evaluation harness, real-LLM adapter
+scaffolding and static demo frontend are complete and ruff + mypy + 232
+tests clean. Next phases:
+
+- Replace mocks with Gemini-backed adapters using real API keys.
+- Run benchmarks on full MATH + GSM8K test sets and publish a report.
+- Build the Next.js 15 frontend on top of the existing static overlay.
 
 ## Repo conventions
 
-- Develop on the feature branch indicated in the task; pushes go there.
-- Tests live under `tests/`, one folder per layer. `conftest.py` at root
-  inserts `src/` into `sys.path` so you can `pytest -q` without a poetry
-  install.
+- Develop on the branch indicated by the task; pushes go there.
+- Tests under `tests/`, one folder per layer. `conftest.py` puts `src/`
+  on `sys.path` so `pytest -q` works without a poetry install.
 - No emojis in code or commit messages.
+- Every commit must keep ruff, mypy, and the test suite green.

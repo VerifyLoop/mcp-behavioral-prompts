@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import hashlib
 import logging
-from typing import Optional, Protocol
+from typing import Protocol
 
-from ..shared.schemas import BBox, VisionElement, VisionResult
+from ..shared.schemas import BBox, VisionResult
 from .cache import VisionCache
 
 logger = logging.getLogger(__name__)
@@ -63,7 +63,7 @@ class VisionAgent:
     def __init__(
         self,
         llm: VisionLLMProtocol,
-        cache: Optional[VisionCache] = None,
+        cache: VisionCache | None = None,
     ) -> None:
         self._llm = llm
         self._cache = cache if cache is not None else VisionCache()
@@ -99,7 +99,6 @@ class VisionAgent:
         - Internal: elements carry `bbox={x,y,w,h}` in 0-1 floats and the
           wrapper has top-level `page_width/page_height`.
         """
-        from ..shared.schemas import BBox
 
         raw.setdefault("image_hash", image_hash_value)
 
