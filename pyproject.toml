@@ -1,20 +1,35 @@
 [tool.poetry]
 name = "mcp-behavioral-prompts"
-version = "1.0.0"
-description = "A specialized MCP server providing behavioral prompts for AI assistant modification."
+version = "1.1.0"
+description = "MCP server with behavioral prompts and the Brainer STEM tutor stack (solver + socratic tutor + vision + eval)."
 authors = ["VerifyLoop"]
 readme = "README.md"
-packages = [{include = "mcp_prompts_server", from = "src"}]
+packages = [
+    {include = "mcp_prompts_server", from = "src"},
+    {include = "brainer_stem_tutor", from = "src"},
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"
 mcp = {extras = ["cli"], version = "^1.2.0"}
+pydantic = "^2.7"
 pydantic-settings = "^2.3.4"
 colorlog = "^6.8.2"
+sympy = "^1.12"
+pint = "^0.23"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
 pytest-asyncio = "^0.23.7"
+
+[tool.poetry.scripts]
+brainer-tutor-eval = "brainer_stem_tutor.eval.cli:main"
+brainer-tutor-demo = "brainer_stem_tutor.demo:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-ra"
 
 [build-system]
 requires = ["poetry-core"]
