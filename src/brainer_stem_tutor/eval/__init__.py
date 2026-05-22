@@ -1,4 +1,5 @@
 from .datasets import BUILTIN_DATASETS, EvalProblem, load_problems
+from .judge import HeuristicHintJudge, HintJudgeProtocol, JudgeReport, LLMHintJudge
 from .metrics import (
     SolverMetrics,
     TutorMetrics,
@@ -16,6 +17,10 @@ from .runners import (
 __all__ = [
     "BUILTIN_DATASETS",
     "EvalProblem",
+    "HeuristicHintJudge",
+    "HintJudgeProtocol",
+    "JudgeReport",
+    "LLMHintJudge",
     "SimulatedStudent",
     "SolverMetrics",
     "SolverRunner",
