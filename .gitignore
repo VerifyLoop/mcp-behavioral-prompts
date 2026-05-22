@@ -35,8 +35,13 @@ ENV/
 logs/*.log
 !logs/.gitkeep
 
-# Pytest
+# Pytest / coverage / lint / type cache
 .pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
 
 # Configuration files
 GEMINI_CLI_CONFIG.json
