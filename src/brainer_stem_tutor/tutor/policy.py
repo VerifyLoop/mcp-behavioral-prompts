@@ -41,7 +41,12 @@ class FollowPolicy:
         signals: StudentSignals,
         total_steps: int,
     ) -> PolicyDecision:
-        target_step = min(signals.last_correct_step + 1, max(total_steps, 1))
+        # target_step is what the student should attempt next. Clamp into
+        # [1, total_steps] — never past the answer step. The previous
+        # implementation used max(total_steps, 1) inside min(), letting the
+        # value escape past total_steps when last_correct_step >= total_steps.
+        total = max(total_steps, 1)
+        target_step = min(max(signals.last_correct_step + 1, 1), total)
         s = self._settings
 
         # 1) Frustration cap: regardless of other signals, if the student is
@@ -85,7 +90,16 @@ class FollowPolicy:
                 reason=f"attempts_count={signals.attempts_count}",
             )
 
-        # 5) Default: student is making progress -> confirm and advance.
+        # 5) Student already completed the final step — encourage them to
+        # state the conclusion in their own words rather than reset.
+        if signals.last_correct_step >= total_steps:
+            return PolicyDecision(
+                strategy="confirm_and_advance",
+                target_step=target_step,
+                reason="all steps completed",
+            )
+
+        # 6) Default: student is making progress -> confirm and advance.
         return PolicyDecision(
             strategy="confirm_and_advance",
             target_step=target_step,

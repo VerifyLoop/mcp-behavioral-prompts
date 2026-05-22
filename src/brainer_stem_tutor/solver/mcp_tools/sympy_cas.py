@@ -1,7 +1,9 @@
 """Symbolic CAS verifications backed by sympy.
 
 These functions are MCP-tool-shaped (string in, string out, no side effects)
-so a FastMCP wrapper can expose them as-is to the solver agent.
+so a FastMCP wrapper can expose them as-is to the solver agent. Every sympy
+call goes through `run_with_timeout` so a pathological problem can't hang
+the agent.
 """
 from __future__ import annotations
 
@@ -9,6 +11,10 @@ from dataclasses import dataclass
 from typing import Optional
 
 import sympy as sp
+
+from ._timeout import run_with_timeout
+
+DEFAULT_TIMEOUT_SECONDS = 3.0
 
 
 @dataclass
@@ -25,17 +31,23 @@ def _safe_parse(expr: str) -> sp.Expr:
     return sp.sympify(expr, evaluate=True)
 
 
-def sympy_simplify(expr: str) -> CASResult:
+def sympy_simplify(expr: str, timeout: float = DEFAULT_TIMEOUT_SECONDS) -> CASResult:
     """Simplify an expression. Used by the solver to canonicalise its work."""
     try:
         e = _safe_parse(expr)
-        s = sp.simplify(e)
+        s = run_with_timeout(sp.simplify, args=(e,), seconds=timeout)
         return CASResult(ok=True, output=str(s))
+    except TimeoutError as exc:
+        return CASResult(ok=False, output="", notes=f"simplify timeout: {exc}")
     except Exception as exc:
         return CASResult(ok=False, output="", notes=f"simplify failed: {exc}")
 
 
-def sympy_solve_equation(equation: str, variable: str = "x") -> CASResult:
+def sympy_solve_equation(
+    equation: str,
+    variable: str = "x",
+    timeout: float = DEFAULT_TIMEOUT_SECONDS,
+) -> CASResult:
     """Solve `lhs = rhs` (or expression-set-to-zero) for `variable`.
 
     Accepts either `x**2 - 4` (treated as = 0) or `x**2 = 4`.
@@ -49,8 +61,10 @@ def sympy_solve_equation(equation: str, variable: str = "x") -> CASResult:
         else:
             eq = sp.Eq(_safe_parse(equation), 0)
         var = sp.symbols(variable)
-        solutions = sp.solve(eq, var)
+        solutions = run_with_timeout(sp.solve, args=(eq, var), seconds=timeout)
         return CASResult(ok=True, output=str(solutions))
+    except TimeoutError as exc:
+        return CASResult(ok=False, output="", notes=f"solve timeout: {exc}")
     except Exception as exc:
         return CASResult(ok=False, output="", notes=f"solve failed: {exc}")
 
@@ -59,6 +73,7 @@ def sympy_verify(
     candidate_expr: str,
     target_expr: str,
     numerical_tolerance: float = 1e-9,
+    timeout: float = DEFAULT_TIMEOUT_SECONDS,
 ) -> CASResult:
     """Decide whether `candidate_expr` and `target_expr` are equivalent.
 
@@ -73,7 +88,9 @@ def sympy_verify(
         return CASResult(ok=False, output="false", notes=f"parse error: {exc}")
 
     try:
-        diff = sp.simplify(c - t)
+        diff = run_with_timeout(sp.simplify, args=(c - t,), seconds=timeout)
+    except TimeoutError as exc:
+        return CASResult(ok=False, output="false", notes=f"simplify timeout: {exc}")
     except Exception as exc:
         return CASResult(ok=False, output="false", notes=f"simplify error: {exc}")
 

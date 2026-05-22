@@ -164,14 +164,33 @@ class MockSolverLLM:
         except Exception:
             roots = []
 
-        num: Optional[float]
-        if len(roots) == 1:
+        sym = sp.symbols(var)
+        # Classify roots: real & numeric vs complex vs free-symbol.
+        real_numeric_roots: list[sp.Expr] = []
+        complex_roots: list[sp.Expr] = []
+        under_specified_roots: list[sp.Expr] = []
+        for r in roots:
             try:
-                num = float(roots[0])
+                free = r.free_symbols - {sym}
+            except AttributeError:
+                free = set()
+            if free:
+                under_specified_roots.append(r)
+                continue
+            try:
+                if r.is_real is False:
+                    complex_roots.append(r)
+                    continue
+            except AttributeError:
+                pass
+            real_numeric_roots.append(r)
+
+        num: Optional[float] = None
+        if len(real_numeric_roots) == 1 and not (complex_roots or under_specified_roots):
+            try:
+                num = float(real_numeric_roots[0])
             except (TypeError, ValueError):
                 num = None
-        else:
-            num = None
 
         # Verify each root by substituting back into the equation.
         verifications: list[VerificationRecord] = []
@@ -182,8 +201,7 @@ class MockSolverLLM:
             residual = lhs - rhs
         else:
             residual = sp.sympify(eq)
-        sym = sp.symbols(var)
-        for r in roots:
+        for r in real_numeric_roots:
             val = sp.simplify(residual.subs(sym, r))
             verifications.append(
                 VerificationRecord(
@@ -194,14 +212,37 @@ class MockSolverLLM:
                     notes=f"residual after substitution = {val}",
                 )
             )
+        # Complex roots: still verify substitution but flag that no real
+        # solution exists, since most curricula expect real answers.
+        if complex_roots and not real_numeric_roots:
+            verifications.append(
+                VerificationRecord(
+                    tool="sympy_cas",
+                    input=f"solve {eq} for {var}",
+                    output=solutions_str,
+                    passed=False,
+                    notes="no real solutions found; only complex roots",
+                )
+            )
+        # Under-specified: solution depends on other free variables.
+        if under_specified_roots:
+            verifications.append(
+                VerificationRecord(
+                    tool="sympy_cas",
+                    input=f"solve {eq} for {var}",
+                    output=solutions_str,
+                    passed=False,
+                    notes="under-specified: roots contain free symbols",
+                )
+            )
         if not verifications:
             verifications.append(
                 VerificationRecord(
                     tool="sympy_cas",
                     input=f"solve {eq} for {var}",
                     output=solutions_str,
-                    passed=True,
-                    notes="sympy.solve returned a non-numeric structure",
+                    passed=False,
+                    notes="sympy.solve returned an empty or unrecognised structure",
                 )
             )
 
@@ -302,9 +343,15 @@ class SolverAgent:
 
         confidence = self._calibrate_confidence(draft.verifications)
 
+        # Subject must be one of the literal values the schema allows; reject
+        # unknown subjects rather than letting them slip through and break
+        # downstream consumers.
+        allowed_subjects = {"math", "physics", "chemistry", "other"}
+        subject = draft.subject if draft.subject in allowed_subjects else "other"
+
         solved = SolvedProblem(
             problem_text=problem_text,
-            subject=draft.subject,  # type: ignore[arg-type]
+            subject=subject,  # type: ignore[arg-type]
             steps=draft.steps,
             final_answer=draft.final_answer,
             final_answer_numeric=draft.final_answer_numeric,
